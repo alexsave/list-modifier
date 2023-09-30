@@ -3,6 +3,7 @@ let deletedDivsStack = [];  // Stack to store the deleted divs
 let isScanningEnabled = false;  // Flag to control scanning
 let maxDeletedItems = 5;  // Maximum number of deleted items to keep for undo
 
+// Note: double click shift to activate all this
 
 function handleMouseEvents(event) {
   event.preventDefault();

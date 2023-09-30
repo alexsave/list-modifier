@@ -3,9 +3,6 @@
   "name": "Deletable Item List",
   "version": "1.0",
   "description": "Turns any list into a deletable item list.",
-  "action": {
-    "default_popup": "popup.html"
-  },
   "permissions": ["storage", "activeTab", "scripting"],
   "content_scripts": [
     {
@@ -14,13 +11,6 @@
       "run_at": "document_idle",
       "all_frames": true
     }
-  ],
-  "background": {
-    "service_worker": "background.js"
-  }
-  //"web_accessible_resources": [{
-      //"resources": ["content.js"],
-      //"matches": ["<all_urls>"]
-  //}]
+  ]
 }
 
