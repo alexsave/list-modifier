@@ -11,9 +11,16 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_end",
+      "run_at": "document_idle",
       "all_frames": true
     }
-  ]
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+  //"web_accessible_resources": [{
+      //"resources": ["content.js"],
+      //"matches": ["<all_urls>"]
+  //}]
 }
 

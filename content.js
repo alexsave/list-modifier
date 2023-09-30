@@ -1,11 +1,12 @@
 let highlightedDivs = [];  // List to remember highlighted divs
 let deletedDivsStack = [];  // Stack to store the deleted divs
-let isScanningEnabled = true;  // Flag to control scanning
+let isScanningEnabled = false;  // Flag to control scanning
 let maxDeletedItems = 5;  // Maximum number of deleted items to keep for undo
 
+
 function handleMouseEvents(event) {
-  event.stopPropagation();
   event.preventDefault();
+  event.stopPropagation();
   const element = event.target;
 
   if (!isScanningEnabled) return;
@@ -19,6 +20,13 @@ function handleMouseEvents(event) {
     document.removeEventListener('click', handleMouseEvents);
 
     if (highlightedDivs.length > 0) {
+      document.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
+          event.preventDefault();
+          undoDeletion();
+        }
+      });
+
       openLinksInNewTab();
       addDeleteButtons(highlightedDivs);
       addToDeletedStack(highlightedDivs);
@@ -74,7 +82,8 @@ function addDeleteButtons(divs) {
   for (const div of divs) {
     const deleteButton = document.createElement('button');
     deleteButton.textContent = 'Delete';
-    deleteButton.addEventListener('click', () => {
+    deleteButton.addEventListener('click', e => {
+      e.preventDefault();
       const originalParent = div.parentElement;
       addToDeletedStack({ div, originalParent });  // Add to the deleted stack with original parent info
       div.remove();
@@ -98,18 +107,6 @@ function clearHighlightedDivs() {
   highlightedDivs = [];
 }
 
-alert('content.js activated')
-
-document.addEventListener('mouseover', handleMouseEvents);
-document.addEventListener('click', handleMouseEvents);
-
-document.addEventListener('keydown', event => {
-  if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
-    event.preventDefault();
-    undoDeletion();
-  }
-});
-
 function undoDeletion() {
   if (deletedDivsStack.length > 0) {
     const lastDeletedItem = deletedDivsStack.pop();
@@ -125,3 +122,19 @@ function undoDeletion() {
 }
 
 
+let lastShiftClickTime = 0;
+const shiftClickThreshold = 300; // Time threshold (in milliseconds) for a rapid double click
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Shift') {
+    const currentTime = new Date().getTime();
+
+    if (currentTime - lastShiftClickTime < shiftClickThreshold) {
+      // Double shift click detected, activate other listeners
+      isScanningEnabled = true;
+      document.addEventListener('mouseover', handleMouseEvents);
+      document.addEventListener('click', handleMouseEvents);
+    }
+    lastShiftClickTime = currentTime;
+  }
+});
