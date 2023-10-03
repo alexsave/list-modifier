@@ -3,6 +3,8 @@ let highlightedDivs = [];  // List to remember highlighted divs
 let deletedDivsStack = [];  // Stack to store the deleted divs
 let maxDeletedItems = 5;  // Maximum number of deleted items to keep for undo
 
+let finalDivs = [];
+
 // Note: double click shift to activate all this
 
 function handleMouseEvents(event) {
@@ -30,9 +32,76 @@ function handleMouseEvents(event) {
 
       openLinksInNewTab();
       addDeleteButtons(highlightedDivs);
+	  finalDivs = [...highlightedDivs];
+      addDraggableBehavior(highlightedDivs);
       clearHighlightedDivs();
     }
   }
+}
+
+let isDragging = false;
+let draggedElement = null;
+
+function addDraggableBehavior(divs) {
+  //const deleteButtons = document.querySelectorAll('button');
+
+  divs.forEach(button => {
+    button.addEventListener('dragstart', (event) => {
+      event.dataTransfer.setData('text/plain', '');  // Set data for dragging
+      isDragging = true;
+      draggedElement = button;//.parentElement;
+    });
+
+    button.addEventListener('dragend', () => {
+      isDragging = false;
+      draggedElement = null;
+    });
+  });
+
+  document.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    if (!isDragging)
+        return;
+    let targetElement = event.target;
+
+    // hope this doesn't slow it down too much. the faster way might be to keep a list of bounding boxes of the elements
+    // and update it on every swap
+    while (!finalDivs.includes(targetElement)) {
+      targetElement = targetElement.parentElement;
+      if (targetElement === document.documentElement || targetElement === document.body)
+          return;
+    }
+
+    if (/*isDragging && */targetElement !== draggedElement){// && finalDivs.includes(targetElement)) {
+      //console.log(targetElement.innerText);
+      const boundingBox = targetElement.getBoundingClientRect();
+
+      const x = event.clientX - boundingBox.left;
+      const y = event.clientY - boundingBox.top;
+
+      const parent = targetElement.parentElement;
+      const draggedIndex = Array.from(parent.children).indexOf(draggedElement);
+      const targetIndex = Array.from(parent.children).indexOf(targetElement);
+
+      if (draggedIndex !== -1 && targetIndex !== -1) {
+        if (draggedIndex < targetIndex) {
+          parent.insertBefore(targetElement, draggedElement);
+        } else {
+          parent.insertBefore(draggedElement, targetElement);
+        }
+      }
+
+    }
+  });
+
+  document.addEventListener('mousemove', (event) => {
+    if (isDragging) {
+      const style = draggedElement.style;
+      style.position = 'fixed';
+      style.top = event.clientY - draggedElement.clientHeight / 2 + 'px';
+      style.left = event.clientX - draggedElement.clientWidth / 2 + 'px';
+    }
+  });
 }
 
 function openLinksInNewTab() {
