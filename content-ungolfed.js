@@ -18,7 +18,6 @@ function handleMouseEvents(event) {
     clearHighlightedDivs();
     recursiveHighlight(element);
   } else if (event.type === 'click') {
-    stopScanning();
 
     if (highlightedDivs.length > 0) {
       document.addEventListener('keydown', event => {
@@ -32,8 +31,8 @@ function handleMouseEvents(event) {
       addDeleteButtons(highlightedDivs);
 	  finalDivs = [...highlightedDivs];
       addDraggableBehavior(highlightedDivs);
-      clearHighlightedDivs();
     }
+    stopScanning();
   }
 }
 
@@ -214,7 +213,7 @@ document.addEventListener('keydown', event => {
       // Double shift click detected, activate other listeners
       isScanningEnabled = true;
       document.addEventListener('mouseover', handleMouseEvents);
-      document.addEventListener('click', handleMouseEvents);
+      document.addEventListener('click', handleMouseEvents, true);
     }
     lastShiftClickTime = currentTime;
   } else if (event.key === 'Escape') {
