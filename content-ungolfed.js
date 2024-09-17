@@ -129,7 +129,9 @@ function isTopLevelElement(element) {
 }
 
 function checkChildrenClasses(element) {
-  const children = element.children;
+  // Hope this doesn't actually modify anything
+  const children = [...element.children].filter(x => x.nodeName !== 'SCRIPT' && x.nodeName !== 'SOURCE');
+
   if (children.length < 3) return false;
 
   const firstChildClass = children[0].classList[0];
@@ -141,7 +143,12 @@ function checkChildrenClasses(element) {
     }
   }
 
-  return (count / children.length) > 0.33;
+  let x = (count / children.length) > 0.33;
+  if (x) {
+      console.log('highlighting children of: ')
+      console.log(element)
+  }
+  return x
 }
 
 function highlightAllChildren(element) {
