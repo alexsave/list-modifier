@@ -1,1 +1,1 @@
-{"manifest_version": 3,"name": "Deletable Item List","version": "1.0","description": "Turns any list into a deletable item list.","content_scripts": [{"matches": ["<all_urls>"],"js": ["c.js"],"run_at": "document_idle","all_frames": true}]}
+{"manifest_version": 3,"name": "Deletable Item List","version": "1.0","description": "Turns any list into a deletable item list.","content_scripts": [{"matches": ["<all_urls>"],"js": ["content-ungolfed.js"],"run_at": "document_idle","all_frames": true}]}
