@@ -1,3 +1,4 @@
+let listParents = [];
 let isScanningEnabled = false;  // Flag to control scanning
 let highlightedDivs = [];  // List to remember highlighted divs
 let deletedDivsStack = [];  // Stack to store the deleted divs
@@ -8,11 +9,14 @@ let finalDivs = [];
 // Note: double click shift to activate all this
 
 function handleMouseEvents(event) {
+  if (!isScanningEnabled) {
+      checkDeletionButtons();
+      return;
+  }
   event.preventDefault();
   event.stopPropagation();
   const element = event.target;
 
-  if (!isScanningEnabled) return;
 
   if (event.type === 'mouseover') {
     clearHighlightedDivs();
@@ -27,20 +31,22 @@ function handleMouseEvents(event) {
         }
       });
 
-      openLinksInNewTab();
       addDeleteButtons(highlightedDivs);
 	  finalDivs = [...highlightedDivs];
       addDraggableBehavior(highlightedDivs);
+      // Keep on the look out for more 'siblings'
+      listParents.push(highlightedDivs[0].parentElement);
+
     }
     stopScanning();
   }
 }
 
 const stopScanning = () => {
-    isScanningEnabled = false;
     document.removeEventListener('mouseover', handleMouseEvents);
     document.removeEventListener('click', handleMouseEvents);
     clearHighlightedDivs();
+    isScanningEnabled = false;
 }
 
 let isDragging = false;
@@ -76,8 +82,7 @@ function addDraggableBehavior(divs) {
           return;
     }
 
-    if (/*isDragging && */targetElement !== draggedElement){// && finalDivs.includes(targetElement)) {
-      //console.log(targetElement.innerText);
+    if (targetElement !== draggedElement){
       const boundingBox = targetElement.getBoundingClientRect();
 
       const x = event.clientX - boundingBox.left;
@@ -159,18 +164,23 @@ function highlightAllChildren(element) {
 }
 
 function addDeleteButtons(divs) {
-  for (const div of divs) {
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete';
-    deleteButton.addEventListener('click', e => {
-      e.preventDefault();
-      const originalParent = div.parentElement;
-      addToDeletedStack({ div, originalParent });  // Add to the deleted stack with original parent info
-      div.remove();
-    });
-    div.appendChild(deleteButton);
+  for (const div of divs){
+      addDeleteButton(div);
   }
 }
+
+const addDeleteButton = div => {
+  const deleteButton = document.createElement('button');
+  deleteButton.textContent = 'Delete';
+  deleteButton.addEventListener('click', e => {
+    e.preventDefault();
+    const originalParent = div.parentElement;
+    addToDeletedStack({ div, originalParent });  // Add to the deleted stack with original parent info
+    div.remove();
+  });
+  div.appendChild(deleteButton);
+}
+
 
 function addToDeletedStack({ div, originalParent }) {
   if (deletedDivsStack.length >= maxDeletedItems) {
@@ -212,6 +222,7 @@ document.addEventListener('keydown', event => {
     if (currentTime - lastShiftClickTime < shiftClickThreshold) {
       // Double shift click detected, activate other listeners
       isScanningEnabled = true;
+      openLinksInNewTab();
       document.addEventListener('mouseover', handleMouseEvents);
       document.addEventListener('click', handleMouseEvents, true);
     }
@@ -220,3 +231,26 @@ document.addEventListener('keydown', event => {
     stopScanning();
   }
 });
+
+const checkDeletionButtons = () => {
+  listParents.forEach(par => {
+    [...(par.children)].forEach(child => {
+       let deleteButtons = [...child.querySelectorAll('button')].filter(button => button.textContent.trim() === 'Delete');
+       if (deleteButtons.length > 1) {
+         // Somehow got 2 buttons, remove all but one
+         for (let i = 1; i < deleteButtons.length; i++)
+           deleteButtons[i].remove();
+       } else if (!deleteButtons.length) {
+           // Must be a new load, add a button while we're here
+           finalDivs.push(child);// iffy on this, but seems to work
+           addDraggableBehavior([child])
+           addDeleteButton(child);
+       }
+    });
+  });
+}
+
+
+setInterval(() => {
+  checkDeletionButtons();
+}, 1000);
