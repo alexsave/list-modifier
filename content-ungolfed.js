@@ -133,27 +133,40 @@ function isTopLevelElement(element) {
 }
 
 function checkChildrenClasses(element) {
-  // Hope this doesn't actually modify anything
+  // Collect all children except for SCRIPT and SOURCE
   const children = [...element.children].filter(x => x.nodeName !== 'SCRIPT' && x.nodeName !== 'SOURCE');
 
+  // If there are fewer than 3 children, exit early
   if (children.length < 3) return false;
 
-  const firstChildClass = children[0].classList[0];
-  let count = 0;
+  // Create a map to count occurrences of the first class for each child
+  const classCount = new Map();
 
-  for (let i = 1; i < children.length; i++) {
-    if (children[i].classList[0] === firstChildClass) {
-      count++;
+  // Count the occurrences of each first class
+  for (let child of children) {
+    const firstClass = child.classList[0];
+    if (firstClass) {
+      classCount.set(firstClass, (classCount.get(firstClass) || 0) + 1);
     }
   }
 
-  let x = (count / children.length) > 0.33;
-  if (x) {
-      console.log('highlighting children of: ')
-      console.log(element)
+  // Find the class with the maximum occurrence
+  let maxClassCount = 0;
+  let mostCommonClass = null;
+
+  for (let [cls, count] of classCount) {
+    if (count > maxClassCount) {
+      maxClassCount = count;
+      mostCommonClass = cls;
+    }
   }
-  return x
+
+  // Check if the majority of children share this most common class
+  const majority = (maxClassCount / children.length) > 0.7; // Majority = more than 50%
+
+  return majority;
 }
+
 
 function highlightAllChildren(element) {
   const children = element.children;
