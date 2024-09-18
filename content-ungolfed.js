@@ -185,14 +185,21 @@ function addDeleteButtons(divs) {
 const addDeleteButton = div => {
   const deleteButton = document.createElement('button');
   deleteButton.textContent = 'Delete';
+
+  // Set CSS styles to ensure the button is visible above the list element
+  deleteButton.style.position = 'relative';  // Ensure the button is positioned relative to its container
+  deleteButton.style.zIndex = '10';  // Set a high z-index to bring it above the list elements
+
   deleteButton.addEventListener('click', e => {
     e.preventDefault();
     const originalParent = div.parentElement;
     addToDeletedStack({ div, originalParent });  // Add to the deleted stack with original parent info
     div.remove();
   });
+
   div.appendChild(deleteButton);
 }
+
 
 
 function addToDeletedStack({ div, originalParent }) {
