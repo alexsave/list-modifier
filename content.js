@@ -265,6 +265,8 @@ const checkDeletionButtons = () => {
            finalDivs.push(child);// iffy on this, but seems to work
            addDraggableBehavior([child])
            addDeleteButton(child);
+           // Also
+           openLinksInNewTab();
        }
     });
   });
