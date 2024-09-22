@@ -1,10 +1,11 @@
 let listParents = [];
 let isScanningEnabled = false;  // Flag to control scanning
 let highlightedDivs = [];  // List to remember highlighted divs
-let deletedDivsStack = [];  // Stack to store the deleted divs
 let maxDeletedItems = 5;  // Maximum number of deleted items to keep for undo
 
 let finalDivs = [];
+
+let actionStack = [];
 
 // Note: double click shift to activate all this
 
@@ -51,20 +52,25 @@ const stopScanning = () => {
 
 let isDragging = false;
 let draggedElement = null;
+let dragStartIndex = 0;
 
 function addDraggableBehavior(divs) {
-  //const deleteButtons = document.querySelectorAll('button');
 
   divs.forEach(button => {
     button.addEventListener('dragstart', (event) => {
       event.dataTransfer.setData('text/plain', '');  // Set data for dragging
       isDragging = true;
       draggedElement = button;//.parentElement;
+      dragStartIndex = [...button.parentElement.children].indexOf(button);
+      console.log
     });
 
-    button.addEventListener('dragend', () => {
+    button.addEventListener('dragend', ({target}) => {
       isDragging = false;
       draggedElement = null;
+      actionStack.push({parent:button.parentElement,startIndex:dragStartIndex,endIndex:[...button.parentElement.children].indexOf(button),type:'drag'});
+      dragStartIndex = 0;
+      console.log(actionStack[actionStack.length-1]);
     });
   });
 
@@ -193,20 +199,11 @@ const addDeleteButton = div => {
   deleteButton.addEventListener('click', e => {
     e.preventDefault();
     const originalParent = div.parentElement;
-    addToDeletedStack({ div, originalParent });  // Add to the deleted stack with original parent info
+    actionStack.push({parent:originalParent, div:div,startIndex:[...originalParent.children].indexOf(div), type:'delete'});
     div.remove();
   });
 
   div.appendChild(deleteButton);
-}
-
-
-
-function addToDeletedStack({ div, originalParent }) {
-  if (deletedDivsStack.length >= maxDeletedItems) {
-    deletedDivsStack.shift();  // Remove the oldest deleted item if at max capacity
-  }
-  deletedDivsStack.push({ div, originalParent });
 }
 
 
@@ -218,15 +215,30 @@ function clearHighlightedDivs() {
 }
 
 function undoDeletion() {
-  if (deletedDivsStack.length > 0) {
-    const lastDeletedItem = deletedDivsStack.pop();
-    const div = lastDeletedItem.div;
-    const originalParent = lastDeletedItem.originalParent;
+  if (actionStack.length > 0) {
+    const last = actionStack.pop();
+    if (last.type === 'drag') {
+        // swap indicies
+        const refNode = last.parent.children[last.startIndex];
 
-    if (originalParent) {
-      originalParent.appendChild(div);  // Restore the deleted div to its original parent
-    } else {
-      document.body.appendChild(div);  // Restore the deleted div at the end of the document if original parent not found
+        // Move the element back to the original index
+        if (refNode) {
+          if (last.endIndex > last.startIndex) {
+              last.parent.insertBefore(last.parent.children[last.endIndex], refNode);
+          } else {
+              last.parent.insertBefore(last.parent.children[last.endIndex], refNode.nextSibling);
+          }
+        } else {
+          last.parent.appendChild(last.div);
+        }
+    } else if (last.type === 'delete') {
+        // bring back at the index
+        const refNode = last.parent.children[last.startIndex];
+        if (refNode && last.startIndex !== last.parent.children.length) {
+            last.parent.insertBefore(last.div, refNode);
+        } else {
+            last.parent.appendChild(last.div);
+        }
     }
   }
 }
