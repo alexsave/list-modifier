@@ -62,7 +62,6 @@ function addDraggableBehavior(divs) {
       isDragging = true;
       draggedElement = button;//.parentElement;
       dragStartIndex = [...button.parentElement.children].indexOf(button);
-      console.log
     });
 
     button.addEventListener('dragend', ({target}) => {
@@ -70,7 +69,6 @@ function addDraggableBehavior(divs) {
       draggedElement = null;
       actionStack.push({parent:button.parentElement,startIndex:dragStartIndex,endIndex:[...button.parentElement.children].indexOf(button),type:'drag'});
       dragStartIndex = 0;
-      console.log(actionStack[actionStack.length-1]);
     });
   });
 
@@ -196,6 +194,20 @@ const addDeleteButton = (div) => {
   deleteButton.style.position = 'relative'; // Ensure the button is positioned relative to its container
   deleteButton.style.zIndex = '10'; // Set a high z-index to bring it above the list elements
 
+  // Set the font family of deleteButton based on the most common font in child elements
+  const childrenFonts = [...div.querySelectorAll('*')].filter(x=>!x.childElementCount&&!!x.innerText)
+      .map(x => window.getComputedStyle(x).fontFamily.split(',')[0]);
+  if (childrenFonts.length > 0) {
+    const fontCount = new Map();
+    childrenFonts.forEach(font => {
+      fontCount.set(font, (fontCount.get(font) || 0) + 1);
+    });
+    const mostCommonFont = [...fontCount.entries()].reduce((a, b) => (b[1] > a[1] ? b : a), ['', 0])[0];
+    if (mostCommonFont) {
+      deleteButton.style.fontFamily = mostCommonFont;
+    }
+  }
+
   deleteButton.addEventListener('click', (e) => {
     e.preventDefault();
     const originalParent = div.parentElement;
@@ -297,36 +309,14 @@ const checkDeletionButtons = () => {
   listParents.forEach(par => {
     [...(par.children)].forEach(child => {
       let deleteButtons = [...child.querySelectorAll('button')].filter(button => button.textContent.trim() === 'Delete');
-      console.log(deleteButtons);
       if (deleteButtons.length > 1) {
         // Somehow got 2 buttons, remove all but one
         for (let i = 0; i < deleteButtons.length; i++)
           deleteButtons[i].remove();
 
-        // Ensure the remaining delete button is placed correctly
-        /*const deleteButton = deleteButtons[0];
-        let target = deleteButton.parentElement;
-        let stack = [target];
-
-        while (stack.length > 0) {
-          let current = stack.pop();
-          const children = [...current.children];
-
-          for (let i = children.length - 1; i >= 0; i--) {
-            stack.push(children[i]);
-          }
-
-          const style = window.getComputedStyle(current);
-          if (style.height === '100%' && style.width === '100%') {
-            target = current;
-          }
-        }*/
-
-        //if (deleteButton && deleteButton !== target.lastElementChild) {
         addDeleteButton(child);
         //}
       } else if (!deleteButtons.length) {
-        console.log('adding new buttons');
         // Must be a new load, add a button while we're here
         finalDivs.push(child); // iffy on this, but seems to work
         addDraggableBehavior([child]);
@@ -361,10 +351,6 @@ const checkDeletionButtons = () => {
     });
   });
 };
-
-
-
-
 
 setInterval(() => {
   checkDeletionButtons();
