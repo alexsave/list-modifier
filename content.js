@@ -188,24 +188,53 @@ function addDeleteButtons(divs) {
   }
 }
 
-const addDeleteButton = div => {
+const addDeleteButton = (div) => {
   const deleteButton = document.createElement('button');
   deleteButton.textContent = 'Delete';
 
   // Set CSS styles to ensure the button is visible above the list element
-  deleteButton.style.position = 'relative';  // Ensure the button is positioned relative to its container
-  deleteButton.style.zIndex = '10';  // Set a high z-index to bring it above the list elements
+  deleteButton.style.position = 'relative'; // Ensure the button is positioned relative to its container
+  deleteButton.style.zIndex = '10'; // Set a high z-index to bring it above the list elements
 
-  deleteButton.addEventListener('click', e => {
+  deleteButton.addEventListener('click', (e) => {
     e.preventDefault();
     const originalParent = div.parentElement;
-    actionStack.push({parent:originalParent, div:div,startIndex:[...originalParent.children].indexOf(div), type:'delete'});
+    actionStack.push({ parent: originalParent, div: div, startIndex: [...originalParent.children].indexOf(div), type: 'delete' });
     div.remove();
   });
 
-  div.appendChild(deleteButton);
-}
+  let target = div;
+  let stack = [target];
 
+  // Traverse the div to find the last descendant with width and height 100%
+  while (stack.length > 0) {
+    let current = stack.pop();
+    const children = [...current.children];
+
+    // If there are two children, append the delete button after them
+    if (children.length >= 2) {
+      current.appendChild(deleteButton);
+      return;
+    }
+
+    for (let i = children.length - 1; i >= 0; i--) {
+      stack.push(children[i]);
+    }
+
+    // If this element has height and width 100%, set it as the target
+    const style = window.getComputedStyle(current);
+    if (style.height === '100%' && style.width === '100%') {
+      target = current;
+    }
+  }
+
+  // Append the delete button as a sibling of the target
+  if (target !== div) {
+      target.parentElement.appendChild(deleteButton)
+  } else {
+      div.appendChild(deleteButton);
+  }
+};
 
 function clearHighlightedDivs() {
   for (const div of highlightedDivs) {
@@ -267,22 +296,26 @@ document.addEventListener('keydown', event => {
 const checkDeletionButtons = () => {
   listParents.forEach(par => {
     [...(par.children)].forEach(child => {
-       let deleteButtons = [...child.querySelectorAll('button')].filter(button => button.textContent.trim() === 'Delete');
-       if (deleteButtons.length > 1) {
-         // Somehow got 2 buttons, remove all but one
-         for (let i = 1; i < deleteButtons.length; i++)
-           deleteButtons[i].remove();
-       } else if (!deleteButtons.length) {
-           // Must be a new load, add a button while we're here
-           finalDivs.push(child);// iffy on this, but seems to work
-           addDraggableBehavior([child])
-           addDeleteButton(child);
-           // Also
-           openLinksInNewTab();
-       }
+      let deleteButtons = [...child.querySelectorAll('button')].filter(button => button.textContent.trim() === 'Delete');
+      console.log(deleteButtons);
+      if (deleteButtons.length > 1) {
+        // Somehow got 2 buttons, remove all but one
+        for (let i = 1; i < deleteButtons.length; i++)
+          deleteButtons[i].remove();
+      } else if (!deleteButtons.length) {
+        console.log('adding new buttons');
+        // Must be a new load, add a button while we're here
+        finalDivs.push(child); // iffy on this, but seems to work
+        addDraggableBehavior([child]);
+        addDeleteButton(child);
+        // Also
+        openLinksInNewTab();
+      }
     });
   });
-}
+};
+
+
 
 
 setInterval(() => {
